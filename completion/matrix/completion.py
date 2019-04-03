@@ -1,30 +1,21 @@
 import numpy
-import pickle
 import ipdb
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import csc_matrix
-from math import pow, exp
 
-class Latent(object):
-    def __init__(self, feature):
-        self.feature = feature
-        self.Xhat = 0
-        self.iter = 0
-
-    def __len__(self):
-        return self.feature
+from ..latent import Latent
 
 sigmoid = lambda x: 1 / (1 + np.exp(-x))
 
-class NMF(Latent):
+class NMF_Completion(Latent):
     def __init__(self, feature):
-        super(NMF, self).__init__(feature)
+        super(NMF_Completion, self).__init__(feature)
         self.U = 0
         self.V = 0
 
     def __len__(self):
-        return super(NMF, self).__len__()
+        return super(NMF_Completion, self).__len__()
 
     def fit(self, x, alpha, beta,
             learning_rate=0.1, max_iter=100, tol=1e-3, print_loss=False):
@@ -72,9 +63,9 @@ class NMF(Latent):
         self.iter = result
         return self
 
-class LogisticPCA(Latent):
+class LogisticPCA_Completion(Latent):
     def __init__(self, feature):
-        super(LogisticPCA, self).__init__(feature)
+        super(LogisticPCA_Completion, self).__init__(feature)
         self.score = 0
         self.V = 0
         self.theta = 0
@@ -82,7 +73,7 @@ class LogisticPCA(Latent):
         self.label = 0
 
     def __len__(self):
-        return super(LogisticPCA, self).__len__()
+        return super(LogisticPCA_Completion, self).__len__()
 
     @staticmethod
     def _bregman(x, A, V, W):
@@ -154,9 +145,9 @@ class LogisticPCA(Latent):
             ## update V
             V = self._fitV(x, A, V, W, learning_rate)
 
+            loss = self._bregman(x, A, V, W)
+            result.append(loss)
             if print_loss:
-                loss = self._bregman(x, A, V, W)
-                result.append(loss)
                 print(f'Step {epoch+1}, the loss is {loss:.3f}.')
 
             theta = np.dot(A, V.T)
@@ -166,46 +157,89 @@ class LogisticPCA(Latent):
             if epoch == max_iter - 1:
                 print(f'Reach max iteration {int(max_iter)}!')
 
-        plt.plot(result)
-        plt.show()
         self.score = A
         self.V = V
         self.theta = theta
         self.prob = self._prob()
         self.label = self._label()
+        self.iter = result
         return self
 
     def _prob(self):
         theta = self.theta
-        logit = lambda x: 1 / (1 + np.exp(-x))
 
-        return logit(theta)
+        return sigmoid(theta)
 
     def _label(self):
         theta = self.theta
-        logit = lambda x: 1 / (1 + np.exp(-x))
-        proba = logit(theta)
+        proba = sigmoid(theta)
         label = proba.copy()
         label[label > 0.5] = 1
         label[label <= 0.5] = 0
 
         return label
 
-if __name__ == '__main__':
-    R=[
-      [5,3,0,1],
-      [4,0,0,1],
-      [1,1,0,5],
-      [1,0,0,4],
-      [0,1,5,4]]
+class LogisticPCA(LogisticPCA_Completion):
+    def __init__(self):
+        super(LogisticPCA, self).__init__()
 
-    R = np.array(R)
-    K = 2
+    def __len__(self):
+        return super(LogisticPCA, self).__len__()
 
-    model = NMF(K)
-    model.fit(R, 0.02, 0.02, learning_rate=0.0001,
-              max_iter=5e3, tol=1e-4, print_loss=True)
-    print("原始的评分矩阵R为：\n",R)
-    print("经过MF算法填充0处评分值后的评分矩阵R_MF为：\n",model.Xhat)
-    plt.plot(model.iter)
-    plt.show()
+    @staticmethod
+    def _bregman(x, A, V, W):
+        return super(LogisticPCA)._bregman(x, A, V, W)
+
+    def _fitScore(self, X, A, V, W,
+                  learning_rate):
+        return super(LogisticPCA, self)._fitScore(X, A, V, W, learning_rate)
+
+    def _fitV(self, X, A, V, W,
+                  learning_rate):
+        return super(LogisticPCA, self)._fitV(X, A, V, W, learning_rate)
+
+    def fit(self, x, max_iter=100, learning_rate=0.001,
+            tol=1e-4, print_loss=True):
+        n, d = x.shape
+        feature = self.feature
+
+        # mask matrix
+        W = np.ones((n, d))
+        # init
+        A = np.random.randn(n, feature)
+        V = np.random.randn(d, feature)
+        theta = np.dot(A, V.T)
+        # main loop
+        result = []
+        for epoch in range(int(max_iter)):
+            thetaOld = theta
+            ## update score
+            A = self._fitScore(x, A, V, W, learning_rate)
+            ## update V
+            V = self._fitV(x, A, V, W, learning_rate)
+
+            loss = self._bregman(x, A, V, W)
+            result.append(loss)
+            if print_loss:
+                print(f'Step {epoch+1}, the loss is {loss:.3f}.')
+
+            theta = np.dot(A, V.T)
+            if np.sum((thetaOld - theta) ** 2) < tol:
+                break
+
+            if epoch == max_iter - 1:
+                print(f'Reach max iteration {int(max_iter)}!')
+
+        self.score = A
+        self.V = V
+        self.theta = theta
+        self.prob = self._prob()
+        self.label = self._label()
+        self.iter = result
+        return self
+
+    def _prob(self):
+        return super(LogisticPCA, self)._prob()
+
+    def _label(self):
+        return super(LogisticPCA, self)._label()
