@@ -90,13 +90,11 @@ class LogisticPCA_Completion(Latent):
         max_iter = 100
         tol = 1e-2
         for epoch in range(max_iter):
-            AOld = A
+            AOld = A.copy()
             theta = np.dot(A, V.T)
             prob = sigmoid(theta)
             gradient = - np.dot(W * X, V) + np.dot(W * prob, V)
             A -= learning_rate * gradient
-            #loss = self._bregman(X, A, V, W)
-            #print(f'Score step {epoch}, loss {loss}.')
             if np.sum((AOld - A) ** 2) < tol:
                 break
 
@@ -108,7 +106,7 @@ class LogisticPCA_Completion(Latent):
         max_iter = 100
         tol = 1e-2
         for epoch in range(max_iter):
-            VOld = V
+            VOld = V.copy()
             theta = np.dot(A, V.T)
             prob = sigmoid(theta)
             gradient = - np.dot(W.T * X.T, A) + np.dot(W.T * prob.T, A)
