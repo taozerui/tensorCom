@@ -138,8 +138,9 @@ class LogisticPCA_Completion(Latent):
         theta = np.dot(A, V.T)
         # main loop
         result = []
+        loss = 0
         for epoch in range(int(max_iter)):
-            thetaOld = theta
+            lossOld = loss
             ## update score
             A = self._fitScore(x, A, V, W, learning_rate)
             ## update V
@@ -150,8 +151,7 @@ class LogisticPCA_Completion(Latent):
             if print_loss:
                 print(f'Step {epoch+1}, the loss is {loss:.3f}.')
 
-            theta = np.dot(A, V.T)
-            if np.sum((thetaOld - theta) ** 2) < tol:
+            if np.abs(lossOld - loss) < tol:
                 break
 
             if epoch == max_iter - 1:
@@ -161,7 +161,7 @@ class LogisticPCA_Completion(Latent):
         self.V = V
         self.theta = theta
         self.prob = self._prob()
-        self.label = self._label()
+        self.Xhat = self._label()
         self.iter = result
         return self
 
@@ -211,8 +211,9 @@ class LogisticPCA(LogisticPCA_Completion):
         theta = np.dot(A, V.T)
         # main loop
         result = []
+        loss = 0
         for epoch in range(int(max_iter)):
-            thetaOld = theta
+            lossOld = loss
             ## update score
             A = self._fitScore(x, A, V, W, learning_rate)
             ## update V
@@ -224,7 +225,7 @@ class LogisticPCA(LogisticPCA_Completion):
                 print(f'Step {epoch+1}, the loss is {loss:.3f}.')
 
             theta = np.dot(A, V.T)
-            if np.sum((thetaOld - theta) ** 2) < tol:
+            if np.abs(lossOld - loss) < tol:
                 break
 
             if epoch == max_iter - 1:

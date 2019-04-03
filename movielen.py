@@ -8,9 +8,6 @@ from numpy.random import RandomState
 
 from tensorCom.matrix import NMF_Completion, LogisticPCA_Completion
 
-with open('./data/ml-1m/ratings.pkl', 'rb') as f:
-    rating = pickle.load(f)
-
 def binary(rating):
     for k, v in enumerate(rating.data):
         if v >= 4:
@@ -50,9 +47,9 @@ def rmse(testRating, estimateRating):
         a = rowIndex[i]
         b = colIndex[i]
         rmse += (testRating[a, b] - estimateRating[a, b]) ** 2
-        if estimateRating[a, b] > 0:
+        if estimateRating[a, b] > 0.5:
             label = 1
-        elif estimateRating[a, b] <= 0:
+        elif estimateRating[a, b] <= 0.5:
             label = 0
         else:
             raise ValueError(f'Invalide value for ({a}, {b}): {estimateRating[a, b]}!')
@@ -62,44 +59,31 @@ def rmse(testRating, estimateRating):
 
     return rmse / num, error / num
 
-def nmf_main():
+def main():
+    with open('./data/ml-100k/ratings.pkl', 'rb') as f:
+        rating = pickle.load(f)
     rating = binary(rating)
     trainRating, testRating = split(rating)
+    #trainRating = rating[0:100, 0:100]
+    #testRating = rating
 
-    features = np.r_[2]
+    features = np.r_[2, 3, 4, 5]
     errorTot = []
     misclassTot = []
     for i in features:
-        model = NMF_Completion(i)
-        model.fit(trainRating, alpha=0.01, beta=0.01,
-                  learning_rate=0.0001, max_iter=5e3,
+        model1 = LogisticPCA_Completion(i)
+        model1.fit(trainRating, max_iter=1e4, learning_rate=0.01,
+                  tol=1e-2, print_loss=True)
+        model1.plotIter()
+        model2 = NMF_Completion(i)
+        model2.fit(trainRating, alpha=0.01, beta=0.01,
+                  learning_rate=0.0001, max_iter=5,
                   tol=1e-1, print_loss=True)
 
-        error, misclass = rmse(testRating, model.Xhat)
-        print(f'Model latent feature {len(model)}, the misclassification error is {misclass:.3f}.')
-        errorTot.append(error)
-        misclassTot.append(misclass)
+        errorPCA, misclassPCA = rmse(testRating, model1.prob)
+        errorNMF, misclassNMF = rmse(testRating, model2.Xhat)
+        print(f'Model latent feature {len(model1)}')
+        print(f'The misclassification error is | NMF: {misclassNMF:.3f} | Logistic PCA: {misclassPCA:.3f}.')
 
-    return errorTot, misclassTot
-
-rating = binary(rating)
-#trainRating, testRating = split(rating)
-trainRating = rating[0:100, 0:100]
-testRating = rating
-
-features = np.r_[2, 3, 4, 5]
-errorTot = []
-misclassTot = []
-for i in features:
-    model1 = LogisticPCA_Completion(i)
-    model1.fit(trainRating, max_iter=5000, learning_rate=0.01,
-              tol=1e-3, print_loss=True)
-    model2 = NMF_Completion(i)
-    model2.fit(trainRating, alpha=0.01, beta=0.01,
-              learning_rate=0.0001, max_iter=5e3,
-              tol=1e-1, print_loss=True)
-
-    errorPCA, misclassPCA = rmse(testRating, model1.Xhat)
-    errorNMF, misclassNMF = rmse(testRating, model2.Xhat)
-    print(f'Model latent feature {len(model1)}')
-    print(f'The misclassification error is | NMF: {misclassNMF:.3f} | Logistic PCA: {misclassPCA:.3f}.')
+if __name__ == '__main__':
+    main()
