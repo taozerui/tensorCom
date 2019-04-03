@@ -1,12 +1,14 @@
 import pickle
+
 import ipdb
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.sparse import csc_matrix, coo_matrix
 from numpy.random import RandomState
-from completion import NMF, LogisticPCA
 
-with open('./../data/ml-1m/ratings.pkl', 'rb') as f:
+from tensorCom.matrix import NMF_Completion, LogisticPCA_Completion
+
+with open('./data/ml-1m/ratings.pkl', 'rb') as f:
     rating = pickle.load(f)
 
 def binary(rating):
@@ -18,7 +20,7 @@ def binary(rating):
 
     return rating
 
-def split(rating, ratio=0.85, seed=123):
+def split(rating, ratio=0.8, seed=123):
     ratingCache = rating.copy()
     ratingCache.data = ratingCache.data + 1
     ratingNum = len(rating.data)
@@ -68,7 +70,7 @@ def nmf_main():
     errorTot = []
     misclassTot = []
     for i in features:
-        model = NMF(i)
+        model = NMF_Completion(i)
         model.fit(trainRating, alpha=0.01, beta=0.01,
                   learning_rate=0.0001, max_iter=5e3,
                   tol=1e-1, print_loss=True)
@@ -85,16 +87,19 @@ rating = binary(rating)
 trainRating = rating[0:100, 0:100]
 testRating = rating
 
-features = np.r_[2]
+features = np.r_[2, 3, 4, 5]
 errorTot = []
 misclassTot = []
 for i in features:
-    model = LogisticPCA(1)
-    model.fit(trainRating, max_iter=5000, learning_rate=0.01,
+    model1 = LogisticPCA_Completion(i)
+    model1.fit(trainRating, max_iter=5000, learning_rate=0.01,
               tol=1e-3, print_loss=True)
-    ipdb.set_trace()
+    model2 = NMF_Completion(i)
+    model2.fit(trainRating, alpha=0.01, beta=0.01,
+              learning_rate=0.0001, max_iter=5e3,
+              tol=1e-1, print_loss=True)
 
-    error, misclass = rmse(testRating, model.Xhat)
-    print(f'Model latent feature {len(model)}, the misclassification error is {misclass:.3f}.')
-    errorTot.append(error)
-    misclassTot.append(misclass)
+    errorPCA, misclassPCA = rmse(testRating, model1.Xhat)
+    errorNMF, misclassNMF = rmse(testRating, model2.Xhat)
+    print(f'Model latent feature {len(model1)}')
+    print(f'The misclassification error is | NMF: {misclassNMF:.3f} | Logistic PCA: {misclassPCA:.3f}.')

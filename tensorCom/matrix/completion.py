@@ -9,8 +9,8 @@ from ..latent import Latent
 sigmoid = lambda x: 1 / (1 + np.exp(-x))
 
 class NMF_Completion(Latent):
-    def __init__(self, feature):
-        super(NMF_Completion, self).__init__(feature)
+    def __init__(self, ranks):
+        super(NMF_Completion, self).__init__(ranks)
         self.U = 0
         self.V = 0
 
@@ -22,7 +22,7 @@ class NMF_Completion(Latent):
         if type(x) == numpy.ndarray:
             x = csc_matrix(x)
 
-        feature = self.feature
+        feature = self.ranks
         m, n = x.shape
         # mask matrix
         W = x.copy()
@@ -64,8 +64,8 @@ class NMF_Completion(Latent):
         return self
 
 class LogisticPCA_Completion(Latent):
-    def __init__(self, feature):
-        super(LogisticPCA_Completion, self).__init__(feature)
+    def __init__(self, ranks):
+        super(LogisticPCA_Completion, self).__init__(ranks)
         self.score = 0
         self.V = 0
         self.theta = 0
@@ -125,7 +125,7 @@ class LogisticPCA_Completion(Latent):
 
         n, d = x.shape
         #x = 2 * x - 1
-        feature = self.feature
+        feature = self.ranks
 
         # mask matrix
         W = x.copy()
@@ -180,8 +180,8 @@ class LogisticPCA_Completion(Latent):
         return label
 
 class LogisticPCA(LogisticPCA_Completion):
-    def __init__(self):
-        super(LogisticPCA, self).__init__()
+    def __init__(self, ranks):
+        super(LogisticPCA, self).__init__(ranks)
 
     def __len__(self):
         return super(LogisticPCA, self).__len__()
@@ -201,7 +201,7 @@ class LogisticPCA(LogisticPCA_Completion):
     def fit(self, x, max_iter=100, learning_rate=0.001,
             tol=1e-4, print_loss=True):
         n, d = x.shape
-        feature = self.feature
+        feature = self.ranks
 
         # mask matrix
         W = np.ones((n, d))
