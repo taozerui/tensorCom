@@ -39,7 +39,7 @@ def _fit_proximal(x, mask, lmbd,
                   tol=1e-3, print_loss=False):
     """ Proximal based solver for nuclear norm optimization problems.
     Input
-    x : csc_matrix
+    x : np.ndarray
         partially observed matrix.
     mask: np.ndarray
         mask matrix
@@ -86,7 +86,7 @@ def _fit_apgl(x, mask, lmbd,
               tol=1e-3, print_loss=False):
     """ Proximal based solver for nuclear norm optimization problems.
     Input
-    x : csc_matrix
+    x : np.ndarray
         partially observed matrix.
     mask: np.ndarray
         mask matrix.
