@@ -2,11 +2,34 @@
 # coding: utf-8
 
 import numpy as np
+from scipy.linalg import svd
 from numpy.random import RandomState
 import matplotlib.pyplot as plt
 from scipy.sparse import csc_matrix
 
-from propose import svt
+
+def svt(x, coef):
+    """SVT algorithm
+    Parameters
+    ----------
+    x : numpy.ndarray
+        The matrix to be shrinked.
+    coef : float
+        Shrinkage coefficient
+
+    Returns
+    -------
+    xHat : numpy.ndarray
+        Shrinked matrix
+    """
+    n1, n2 = x.shape
+    U, D, VT = svd(x)
+    d = len(D)
+    DTrun = np.zeros((n1, n2))
+    for i in range(d):
+        DTrun[i, i] = max(D[i] - coef, 0)
+
+    return U @ DTrun @ VT
 
 
 def _sigmoid(x):
