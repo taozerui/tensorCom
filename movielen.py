@@ -67,7 +67,7 @@ def main():
     #trainRating = rating[0:100, 0:100]
     #testRating = rating
 
-    features = np.r_[2, 3, 4, 5]
+    features = np.r_[1]
     errorTot = []
     misclassTot = []
     for i in features:

@@ -1,7 +1,8 @@
 import pickle
+import itertools
+
 import ipdb
 import sparse
-import itertools
 import numpy as np
 import matplotlib.pyplot as plt
 from completion import Tucker
