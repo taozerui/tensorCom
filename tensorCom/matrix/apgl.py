@@ -222,7 +222,7 @@ if __name__ == '__main__':
     labelTrain[mask == 0] = 0
 
     # benchmark
-    is_benchmark = False
+    is_benchmark = True
     if is_benchmark:
         from fancyimpute import SoftImpute
         labelTrainBen = label.copy()
@@ -241,11 +241,11 @@ if __name__ == '__main__':
     for l in ls:
         model1 = BinaryMC(l)
         model1.fit(labelTrain, mask, solver='proximal',
-                   max_iter=50, lr=0.01, print_loss=True)
+                   max_iter=100, lr=0.1, print_loss=True)
         # model.plotIter()
         model2 = BinaryMC(l)
         model2.fit(labelTrain, mask, solver='apgl',
-                   max_iter=50, lr=0.01, print_loss=True)
+                   max_iter=100, lr=0.1, print_loss=True)
         plt.plot(model1.iteration, color='r', label='proximal')
         plt.plot(model2.iteration, color='b', label='apgl')
         plt.title('Iteration procedure')
