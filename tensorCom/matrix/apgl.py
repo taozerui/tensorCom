@@ -91,13 +91,14 @@ def _fit_proximal(x, mask, lmbd,
             S = theta - L * _gradient(x, mask, theta)
             thetaNew = svt(S, lmbd * L)
             ce = _cross_entropy(x, mask, thetaNew)
-            L = beta * L
             if ce < _bound(x, mask, thetaNew, theta, L):
                 break
+            else:
+                L = beta * L
         theta = thetaNew
         loss = ce + lmbd * np.linalg.norm(theta, ord='nuc')
         if i == max_iter - 1:
-            print(f'Reach max iteration {max_iter+1}')
+            print(f'Reach max iteration {i+1}')
         if np.abs(lossOld - loss) < tol:
             break
 
@@ -143,16 +144,17 @@ def _fit_apgl(x, mask, lmbd,
             S = A - L * _gradient(x, mask, A)
             thetaNew = svt(S, lmbd * L)
             ce = _cross_entropy(x, mask, thetaNew)
-            L = beta * L
             if ce < _bound(x, mask, thetaNew, theta, L):
                 break
+            else:
+                L = beta * L
         thetaOld = theta
         theta = thetaNew
         alphaOld = alpha
         alpha = (1 + np.sqrt(4 + alpha ** 2)) / 2
         loss = ce + lmbd * np.linalg.norm(theta, ord='nuc')
         if i == max_iter - 1:
-            print(f'Reach max iteration {max_iter+1}')
+            print(f'Reach max iteration {i+1}')
         if np.abs(lossOld - loss) < tol:
             break
 
@@ -220,7 +222,7 @@ if __name__ == '__main__':
     labelTrain[mask == 0] = 0
 
     # benchmark
-    is_benchmark = True
+    is_benchmark = False
     if is_benchmark:
         from fancyimpute import SoftImpute
         labelTrainBen = label.copy()
@@ -239,11 +241,11 @@ if __name__ == '__main__':
     for l in ls:
         model1 = BinaryMC(l)
         model1.fit(labelTrain, mask, solver='proximal',
-                   lr=1, print_loss=True)
+                   max_iter=50, lr=0.01, print_loss=True)
         # model.plotIter()
         model2 = BinaryMC(l)
         model2.fit(labelTrain, mask, solver='apgl',
-                   lr=1, print_loss=True)
+                   max_iter=50, lr=0.01, print_loss=True)
         plt.plot(model1.iteration, color='r', label='proximal')
         plt.plot(model2.iteration, color='b', label='apgl')
         plt.title('Iteration procedure')
